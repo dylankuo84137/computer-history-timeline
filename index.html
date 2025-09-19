@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電腦科技發展歷史時間軸</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .timeline-background {
+            background: linear-gradient(to right, #f8fafc, #f1f5f9);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // 便利貼顏色配置
+        const stickyColors = [
+          { bg: 'bg-yellow-200', border: 'border-yellow-400', hover: 'hover:bg-yellow-300' },
+          { bg: 'bg-pink-200', border: 'border-pink-400', hover: 'hover:bg-pink-300' },
+          { bg: 'bg-blue-200', border: 'border-blue-400', hover: 'hover:bg-blue-300' },
+          { bg: 'bg-green-200', border: 'border-green-400', hover: 'hover:bg-green-300' },
+          { bg: 'bg-purple-200', border: 'border-purple-400', hover: 'hover:bg-purple-300' },
+          { bg: 'bg-orange-200', border: 'border-orange-400', hover: 'hover:bg-orange-300' },
+          { bg: 'bg-indigo-200', border: 'border-indigo-400', hover: 'hover:bg-indigo-300' },
+          { bg: 'bg-red-200', border: 'border-red-400', hover: 'hover:bg-red-300' }
+        ];
+
+        // 完整的電腦發展歷史配置 - 17世紀到現代
+        const configData = {
+          timelineMarkers: [
+            // 17世紀到現代的重要時間節點
+            1600, 1650, 1700, 1750, 1800, 1850, 1900, 1920, 1940, 1960, 1980, 2000, 2020
+          ],
+          historyCards: [
+            // 17世紀計算機械 (1600s)
+            { id: 'card-17th-1', type: '人物', name: '理查·布雷斯韋特', year: 1613, description: '首次記錄「電腦 (computer)」一詞，當時指從事計算工作的人，而非機器。', colorIndex: 2 },
+            { id: 'card-17th-2', type: '人物', name: '布萊茲·帕斯卡', year: 1642, description: '發明手搖計算器 (Pascaline)，最初只能做加法，後來改良可做減法和乘法。', colorIndex: 3 },
+            { id: 'card-17th-3', type: '人物', name: '戈特弗里德·萊布尼茨', year: 1694, description: '建造了步進計算器 (Step Reckoner)，第一台可以自動執行加減乘除四種運算的機器，並發明了萊布尼茨輪。', colorIndex: 4 },
+            
+            // 19世紀巴貝奇時代 (1800s)
+            { id: 'card-babbage-1', type: '人物', name: '查爾斯·巴貝奇', year: 1822, description: '電腦之父，提出差分計算機設計，旨在自動化微積分計算以生成可靠的數學表格。', colorIndex: 5 },
+            { id: 'card-babbage-2', type: '發明', name: '分析機 (Analytical Engine)', year: 1837, description: '巴貝奇設計的通用計算機起點，具備資料儲存、運算、輸入和輸出的概念，是現代電腦架構的先驅。', colorIndex: 6 },
+            { id: 'card-ada-1', type: '人物', name: '愛達·勒芙蕾絲', year: 1833, description: '17歲時在巴貝奇的沙龍中認識了他，對差分機展現出極大興趣，開啟了程式設計史。', colorIndex: 7 },
+            { id: 'card-ada-2', type: '發明', name: '第一個電腦程式', year: 1843, description: '愛達·勒芙蕾絲為分析機編寫計算白努利數的演算法，使用了迴圈和次常式等現代程式設計技巧，被視為史上第一個公開發表的電腦程式。', colorIndex: 0 },
+            { id: 'card-diff-2', type: '發明', name: '差分機二號', year: 1847, description: '巴貝奇設計的零件更精簡、可計算31位數的差分機，展現了機械計算的極致。', colorIndex: 1 },
+            { id: 'card-scheutz', type: '人物', name: '佩爾·格奧爾格·舒茲', year: 1855, description: '瑞典發明家，受巴貝奇啟發成功建造並在巴黎萬國博覽會展出全尺寸差分機。', colorIndex: 2 },
+            
+            // 電氣時代開始 (Late 1800s)
+            { id: 'card-tesla', type: '人物', name: '尼古拉·特斯拉', year: 1888, description: '發明高頻交流發電機，使人類正式邁入電氣時代，為後來的電子計算機奠定基礎。', colorIndex: 3 },
+            { id: 'card-hollerith', type: '人物', name: '赫爾曼·何樂禮', year: 1890, description: '現代機械數據處理之父，為美國人口普查設計了電力製表系統，利用打孔卡和電路元件，比人工計算快約10倍。', colorIndex: 4 },
+            
+            // 20世紀理論基礎 (1900s-1930s)
+            { id: 'card-ibm', type: '發明', name: 'IBM公司成立', year: 1924, description: '何樂禮的製表機械公司最終發展為萬國商業機械公司 (IBM)，成為電腦產業的重要推手。', colorIndex: 5 },
+            { id: 'card-turing', type: '人物', name: '艾倫·圖靈', year: 1936, description: '提出圖靈機概念，為現代電腦科學和人工智慧奠定了理論基礎。', colorIndex: 6 },
+            { id: 'card-shannon', type: '人物', name: '克勞德·夏農', year: 1937, description: '21歲時發表《繼電器和開關電路的符號分析》論文，被視為數位計算機理論和數位電路設計理論的創始人。', colorIndex: 7 },
+            { id: 'card-ww2', type: '發明', name: '二戰推動電腦發展', year: 1939, description: '第二次世界大戰的爆發推動了軍事和科技競爭，促成了第一台電子電腦的誕生。', colorIndex: 0 },
+            
+            // 電子計算機時代 (1940s-1950s)
+            { id: 'card-neumann', type: '人物', name: '約翰·馮·諾伊曼', year: 1945, description: '提出馮諾伊曼架構，這個架構至今仍是大多數電腦系統的基礎設計原理。', colorIndex: 1 },
+            { id: 'card-eniac', type: '發明', name: 'ENIAC', year: 1946, description: '第一台真正的電子數位計算機，重達30噸，佔地167平方米，標誌著電腦時代的開始。', colorIndex: 2 },
+            { id: 'card-transistor', type: '發明', name: '電晶體', year: 1947, description: '貝爾實驗室發明，取代真空管的革命性發明，使電腦變得更小、更快、更可靠。', colorIndex: 3 },
+            { id: 'card-univac', type: '發明', name: 'UNIVAC I', year: 1951, description: '第一台商用電腦，成功預測了艾森豪威爾的總統選舉勝利，向公眾展示了電腦的威力。', colorIndex: 4 },
+            { id: 'card-ada-reprint', type: '發明', name: '愛達筆記再版', year: 1953, description: '愛達·勒芙蕾絲關於巴貝奇分析機的筆記被重新出版，提升了其在電腦發展史上的地位。', colorIndex: 5 },
+            
+            // 現代電腦發展 (1950s-1970s)
+            { id: 'card-ic', type: '發明', name: '集成電路', year: 1958, description: '德州儀器發明，將多個電晶體集成在一個晶片上，大幅提升了電腦的性能和可靠性。', colorIndex: 6 },
+            { id: 'card-mouse', type: '發明', name: '電腦滑鼠', year: 1964, description: '道格拉斯·恩格爾巴特發明，革命性地改變了人機互動方式，讓電腦更容易使用。', colorIndex: 7 },
+            { id: 'card-moore', type: '人物', name: '戈登·摩爾', year: 1965, description: '英特爾創辦人，提出摩爾定律，預測晶片性能每兩年翻倍，至今仍指導著半導體產業。', colorIndex: 0 },
+            { id: 'card-arpanet', type: '發明', name: 'ARPANET', year: 1969, description: '網際網路的前身，第一個封包交換網路，連接了四所美國大學，開啟了網路時代。', colorIndex: 1 },
+            
+            // 微電腦革命 (1970s-1980s)
+            { id: 'card-microprocessor', type: '發明', name: '微處理器', year: 1971, description: 'Intel 4004，第一款商用微處理器，開創了個人電腦時代的技術基礎。', colorIndex: 2 },
+            { id: 'card-floppy', type: '發明', name: '軟碟', year: 1971, description: 'IBM發明，提供了可攜式資料儲存方式，讓程式和資料能在不同電腦間轉移。', colorIndex: 3 },
+            { id: 'card-gates', type: '人物', name: '比爾·蓋茲', year: 1975, description: 'Microsoft創辦人，推動了個人電腦軟體的普及，讓電腦成為每個人都能使用的工具。', colorIndex: 4 },
+            { id: 'card-jobs', type: '人物', name: '史蒂夫·賈伯斯', year: 1976, description: '蘋果電腦創辦人，以用戶體驗為中心的設計理念，革命性地改變了個人電腦產業。', colorIndex: 5 },
+            { id: 'card-apple2', type: '發明', name: 'Apple II', year: 1977, description: '第一台成功的個人電腦，配備彩色顯示和聲音功能，讓電腦走入家庭。', colorIndex: 6 },
+            { id: 'card-ada-lang', type: '發明', name: 'Ada程式語言', year: 1980, description: '美國國防部將其電腦程式語言以「Ada」命名，以紀念愛達·勒芙蕾絲這位世界第一位程式設計師。', colorIndex: 7 },
+            
+            // 個人電腦普及 (1980s-1990s)
+            { id: 'card-ibm-pc', type: '發明', name: 'IBM PC', year: 1981, description: '建立了個人電腦的工業標準，開創了PC兼容機的時代。', colorIndex: 0 },
+            { id: 'card-lotus', type: '發明', name: 'Lotus 1-2-3', year: 1983, description: 'IBM PC的第一個殺手級應用程式，電子試算表軟體，推動了商業電腦化。', colorIndex: 1 },
+            { id: 'card-mac', type: '發明', name: 'Macintosh', year: 1984, description: '第一台成功商業化的圖形使用者介面電腦，改變了人與電腦的互動方式。', colorIndex: 2 },
+            { id: 'card-windows', type: '發明', name: 'Windows 1.0', year: 1985, description: 'Microsoft推出的第一個圖形使用者介面作業系統，讓DOS電腦也能使用圖形界面。', colorIndex: 3 },
+            
+            // 網際網路時代 (1990s-2000s)
+            { id: 'card-www', type: '發明', name: 'World Wide Web', year: 1989, description: '提姆·柏納斯-李發明萬維網，徹底改變了資訊傳播方式，開啟了網際網路時代。', colorIndex: 4 },
+            { id: 'card-linux', type: '發明', name: 'Linux', year: 1991, description: '林納斯·托瓦茲開發的開源作業系統，推動了開源軟體運動，成為伺服器主流系統。', colorIndex: 5 },
+            { id: 'card-mosaic', type: '發明', name: 'Mosaic瀏覽器', year: 1993, description: '第一個圖形化網頁瀏覽器，讓一般大眾能夠輕鬆使用網際網路。', colorIndex: 6 },
+            { id: 'card-google', type: '發明', name: 'Google搜尋引擎', year: 1998, description: '改變資訊檢索方式，讓網路上的龐大資訊變得易於搜尋和存取。', colorIndex: 7 },
+            
+            // 行動與雲端時代 (2000s-2010s)
+            { id: 'card-iphone', type: '發明', name: 'iPhone', year: 2007, description: '蘋果推出的智慧手機，觸控螢幕和直觀介面革命性地改變了行動通訊。', colorIndex: 0 },
+            { id: 'card-android', type: '發明', name: 'Android', year: 2008, description: 'Google開發的開源行動作業系統，推動了智慧手機的普及。', colorIndex: 1 },
+            { id: 'card-ipad', type: '發明', name: 'iPad', year: 2010, description: '開創了平板電腦市場，改變了人們消費媒體內容和輕度計算的方式。', colorIndex: 2 },
+            
+            // AI與現代科技 (2020s)
+            { id: 'card-chatgpt', type: '發明', name: 'ChatGPT', year: 2022, description: 'OpenAI推出的對話式AI，讓人工智慧技術進入大眾生活，開啟AI時代。', colorIndex: 3 }
+          ]
+        };
+
+        const ComputerHistoryTimeline = () => {
+          const [timelineScale, setTimelineScale] = useState(1);
+          const [timelineOffset, setTimelineOffset] = useState(0);
+          const [cards, setCards] = useState(configData.historyCards);
+          const [placedCards, setPlacedCards] = useState([]);
+          const [draggedCard, setDraggedCard] = useState(null);
+          const [isDragging, setIsDragging] = useState(false);
+          const [popupCard, setPopupCard] = useState(null);
+          const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+          const [isTimelineDragging, setIsTimelineDragging] = useState(false);
+          const [dragStart, setDragStart] = useState({ x: 0, offset: 0 });
+          const [showEditHelp, setShowEditHelp] = useState(false);
+          const timelineRef = useRef(null);
+
+          // 時間軸相關設置 - 聚焦17世紀到現代
+          const minYear = 1600;  // 17世紀開始
+          const maxYear = 2030;  // 到2030年
+          const yearRange = maxYear - minYear;
+
+          // 將年份轉換為像素位置 (線性)
+          const yearToPixel = (year) => {
+            const ratio = (year - minYear) / yearRange;
+            return ratio * 2000 * timelineScale + timelineOffset;
+          };
+
+          // 將像素位置轉換為年份 (線性)
+          const pixelToYear = (pixel) => {
+            const ratio = (pixel - timelineOffset) / (2000 * timelineScale);
+            return Math.round(minYear + ratio * yearRange);
+          };
+
+          // 處理時間軸縮放 - 以滑鼠位置為中心  
+          const handleTimelineZoom = (event) => {
+            event.preventDefault();
+            const delta = event.deltaY * -0.001;
+            const newScale = Math.max(0.5, Math.min(3, timelineScale + delta));
+            
+            if (newScale !== timelineScale && timelineRef.current) {
+              // 獲取滑鼠在時間軸中的位置
+              const rect = timelineRef.current.getBoundingClientRect();
+              const mouseX = event.clientX - rect.left;
+              
+              // 計算縮放比例變化
+              const scaleRatio = newScale / timelineScale;
+              
+              // 計算新的偏移量以保持滑鼠位置的年份不變
+              const newOffset = mouseX - (mouseX - timelineOffset) * scaleRatio;
+              
+              // 更新狀態
+              setTimelineScale(newScale);
+              setTimelineOffset(newOffset);
+            }
+          };
+
+          // 處理時間軸拖拽開始
+          const handleTimelineMouseDown = (e) => {
+            // 只有在點擊空白區域時才開始拖拽時間軸
+            if (e.target === timelineRef.current || e.target.classList.contains('timeline-background')) {
+              setIsTimelineDragging(true);
+              setDragStart({
+                x: e.clientX,
+                offset: timelineOffset
+              });
+              setPopupCard(null); // 關閉任何打開的 popup
+            }
+          };
+
+          // 處理時間軸拖拽移動
+          const handleTimelineMouseMove = (e) => {
+            if (isTimelineDragging) {
+              const deltaX = e.clientX - dragStart.x;
+              setTimelineOffset(dragStart.offset + deltaX);
+            }
+          };
+
+          // 處理時間軸拖拽結束
+          const handleTimelineMouseUp = () => {
+            setIsTimelineDragging(false);
+          };
+
+          // 添加全局事件監聽器
+          useEffect(() => {
+            if (isTimelineDragging) {
+              document.addEventListener('mousemove', handleTimelineMouseMove);
+              document.addEventListener('mouseup', handleTimelineMouseUp);
+              document.body.style.cursor = 'grabbing';
+            } else {
+              document.removeEventListener('mousemove', handleTimelineMouseMove);
+              document.removeEventListener('mouseup', handleTimelineMouseUp);
+              document.body.style.cursor = 'default';
+            }
+
+            return () => {
+              document.removeEventListener('mousemove', handleTimelineMouseMove);
+              document.removeEventListener('mouseup', handleTimelineMouseUp);
+              document.body.style.cursor = 'default';
+            };
+          }, [isTimelineDragging, dragStart]);
+
+          // 添加拖拽結束的全局監聽器
+          useEffect(() => {
+            const handleGlobalDragEnd = () => {
+              if (isDragging) {
+                setDraggedCard(null);
+                setIsDragging(false);
+              }
+            };
+
+            document.addEventListener('dragend', handleGlobalDragEnd);
+            document.addEventListener('drop', handleGlobalDragEnd);
+
+            return () => {
+              document.removeEventListener('dragend', handleGlobalDragEnd);
+              document.removeEventListener('drop', handleGlobalDragEnd);
+            };
+          }, [isDragging]);
+
+          // 處理拖拽開始
+          const handleDragStart = (e, card) => {
+            setDraggedCard(card);
+            setIsDragging(true);
+            setPopupCard(null); // 關閉popup
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', card.id);
+          };
+
+          // 處理拖拽結束
+          const handleDragEnd = () => {
+            setDraggedCard(null);
+            setIsDragging(false);
+          };
+
+          // 處理時間軸拖放
+          const handleTimelineDrop = (e) => {
+            e.preventDefault();
+            if (!draggedCard) return;
+
+            const timelineRect = timelineRef.current.getBoundingClientRect();
+            const dropX = e.clientX - timelineRect.left;
+            const dropYear = pixelToYear(dropX);
+
+            // 如果卡片來自卡片庫
+            if (cards.find(card => card.id === draggedCard.id)) {
+              setCards(cards.filter(card => card.id !== draggedCard.id));
+              setPlacedCards([...placedCards, { ...draggedCard, placedYear: dropYear }]);
+            } else {
+              // 如果卡片已在時間軸上，更新位置
+              setPlacedCards(placedCards.map(card => 
+                card.id === draggedCard.id ? { ...card, placedYear: dropYear } : card
+              ));
+            }
+
+            // 重要：清除拖拽狀態
+            setDraggedCard(null);
+            setIsDragging(false);
+          };
+
+          // 處理卡片庫拖放
+          const handleLibraryDrop = (e) => {
+            e.preventDefault();
+            if (!draggedCard || cards.find(card => card.id === draggedCard.id)) return;
+
+            setPlacedCards(placedCards.filter(card => card.id !== draggedCard.id));
+            setCards([...cards, draggedCard]);
+            setPopupCard(null);
+
+            // 重要：清除拖拽狀態
+            setDraggedCard(null);
+            setIsDragging(false);
+          };
+
+          // 防止默認拖放行為
+          const handleDragOver = (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+          };
+
+          // 處理拖拽進入
+          const handleDragEnter = (e) => {
+            e.preventDefault();
+          };
+
+          // 處理拖拽離開
+          const handleDragLeave = (e) => {
+            e.preventDefault();
+          };
+
+          // 處理卡片點擊顯示popup
+          const handleCardClick = (e, card) => {
+            e.stopPropagation();
+            // 防止在時間軸拖拽時觸發
+            if (isTimelineDragging) return;
+            
+            if (placedCards.find(c => c.id === card.id)) {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setPopupPosition({
+                x: rect.left + rect.width / 2,
+                y: rect.top - 10
+              });
+              setPopupCard(card);
+            }
+          };
+
+          // 關閉popup
+          const closePopup = () => {
+            setPopupCard(null);
+          };
+
+          // 卡片組件
+          const Card = ({ card, isPlaced = false, placedYear = null }) => {
+            const colorStyle = stickyColors[card.colorIndex % stickyColors.length];
+            const isCurrentlyDragging = isDragging && draggedCard?.id === card.id;
+            
+            return (
+              <div
+                draggable
+                onDragStart={(e) => handleDragStart(e, card)}
+                onDragEnd={handleDragEnd}
+                onClick={(e) => handleCardClick(e, card)}
+                className={`p-3 rounded-lg shadow-md cursor-move transition-all hover:shadow-xl select-none transform hover:scale-105 ${
+                  colorStyle.bg
+                } ${colorStyle.border} ${colorStyle.hover} ${
+                  isCurrentlyDragging ? 'opacity-50 rotate-6 scale-110' : ''
+                } ${isPlaced ? 'm-1' : 'm-1'}`}
+                style={{
+                  transform: isCurrentlyDragging 
+                    ? `rotate(${Math.random() * 4 - 2}deg) scale(1.1)` 
+                    : `rotate(${Math.random() * 4 - 2}deg)`,
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08)',
+                  minHeight: isPlaced ? '80px' : '90px'
+                }}
+              >
+                <div className={`text-xs font-bold mb-1 ${
+                  card.type === '人物' ? 'text-blue-800' : 'text-purple-800'
+                }`}>
+                  {card.type}
+                </div>
+                <div className="text-sm font-semibold text-gray-800 mb-1 leading-tight">{card.name}</div>
+                <div className="text-xs text-gray-600">
+                  {placedYear || card.year}年
+                </div>
+              </div>
+            );
+          };
+
+          // Popup組件
+          const PopupDetail = () => {
+            if (!popupCard) return null;
+
+            return (
+              <>
+                {/* 遮罩層 */}
+                <div 
+                  className="fixed inset-0 z-40"
+                  onClick={closePopup}
+                />
+                
+                {/* Popup內容 */}
+                <div 
+                  className="fixed z-50 bg-white rounded-lg shadow-2xl border-2 border-gray-200 p-4 max-w-xs"
+                  style={{
+                    left: `${popupPosition.x}px`,
+                    top: `${popupPosition.y}px`,
+                    transform: 'translate(-50%, -100%)',
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                  }}
+                >
+                  {/* 小箭頭 */}
+                  <div 
+                    className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0"
+                    style={{
+                      borderLeft: '8px solid transparent',
+                      borderRight: '8px solid transparent',
+                      borderTop: '8px solid white'
+                    }}
+                  />
+                  
+                  <div className="mb-3">
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                      popupCard.type === '人物' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                    }`}>
+                      {popupCard.type}
+                    </span>
+                  </div>
+                  
+                  <h3 className="text-lg font-bold mb-2 text-gray-800">{popupCard.name}</h3>
+                  
+                  <p className="text-sm text-gray-600 mb-3">
+                    原始年份: {popupCard.year}年
+                    {popupCard.placedYear && popupCard.placedYear !== popupCard.year && (
+                      <span className="block">放置年份: {popupCard.placedYear}年</span>
+                    )}
+                  </p>
+                  
+                  <p className="text-sm text-gray-800 mb-4">{popupCard.description}</p>
+                  
+                  <button
+                    onClick={() => {
+                      setPlacedCards(placedCards.filter(card => card.id !== popupCard.id));
+                      setCards([...cards, popupCard]);
+                      closePopup();
+                    }}
+                    className="w-full px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
+                  >
+                    移除此卡片
+                  </button>
+                </div>
+              </>
+            );
+          };
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+              {/* 標題 */}
+              <div className="bg-white shadow-lg">
+                <h1 className="text-3xl font-bold text-center py-4 text-gray-800">
+                  電腦科技發展歷史時間軸
+                </h1>
+                <div className="text-center pb-4">
+                  <span className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm mr-2">
+                    ✨ 38張歷史卡片
+                  </span>
+                  <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                    📅 1600-2030年電腦發展史
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col h-screen">
+                {/* 上半部：時間軸區域 */}
+                <div className="flex-1 p-6">
+                  <div className="bg-white rounded-lg shadow-lg h-full">
+                    <div className="p-4 border-b">
+                      <h2 className="text-xl font-bold">⏰ 時間軸</h2>
+                      <p className="text-sm text-gray-600">
+                        拖拽卡片到時間軸 • 點擊卡片查看詳情 • 滑鼠滾輪縮放 • 拖拽時間軸平移 • 17世紀至現代發展完整呈現
+                      </p>
+                    </div>
+                    
+                    <div 
+                      className={`relative overflow-hidden flex-1 timeline-background ${
+                        isTimelineDragging ? 'cursor-grabbing' : 'cursor-grab'
+                      }`}
+                      style={{ 
+                        height: 'calc(100% - 120px)',
+                        background: 'linear-gradient(to right, #f8fafc, #f1f5f9)'
+                      }}
+                      onWheel={handleTimelineZoom}
+                      onDrop={handleTimelineDrop}
+                      onDragOver={handleDragOver}
+                      onDragEnter={handleDragEnter}
+                      onDragLeave={handleDragLeave}
+                      onMouseDown={handleTimelineMouseDown}
+                      onClick={closePopup}
+                      ref={timelineRef}
+                    >
+                      {/* 時間軸主線 - 統一顯示 */}
+                      <div 
+                        className="absolute top-1/2 h-2 bg-gradient-to-r from-blue-400 to-blue-600 transform -translate-y-1/2 rounded-full shadow-md pointer-events-none"
+                        style={{ 
+                          left: `${timelineOffset}px`,
+                          width: `${2000 * timelineScale}px`
+                        }}
+                      ></div>
+                      
+                      {/* 年份標記 */}
+                      {configData.timelineMarkers.map(year => {
+                        const xPos = yearToPixel(year);
+                        const containerWidth = timelineRef.current ? timelineRef.current.clientWidth : 800;
+                        if (xPos < -100 || xPos > containerWidth + 100) return null;
+                        
+                        return (
+                          <div 
+                            key={year}
+                            className="absolute top-1/2 transform -translate-y-1/2 pointer-events-none"
+                            style={{ left: `${xPos}px` }}
+                          >
+                            <div className="w-4 h-4 bg-blue-600 rounded-full -translate-x-1/2 shadow-lg border-2 border-white"></div>
+                            <div className="text-sm font-bold mt-3 -translate-x-1/2 whitespace-nowrap text-center bg-white px-2 py-1 rounded shadow-sm">
+                              {year}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* 已放置的卡片 */}
+                      {placedCards.map(card => {
+                        const xPos = yearToPixel(card.placedYear);
+                        return (
+                          <div
+                            key={card.id}
+                            className="absolute pointer-events-auto"
+                            style={{ 
+                              left: `${xPos}px`, 
+                              top: '30%',
+                              transform: 'translateX(-50%)' 
+                            }}
+                            onMouseDown={(e) => e.stopPropagation()} // 防止觸發時間軸拖拽
+                          >
+                            <Card card={card} isPlaced={true} placedYear={card.placedYear} />
+                          </div>
+                        );
+                      })}
+
+                      {/* 拖放提示區域 - 移到下方避免遮擋時間軸 */}
+                      {isDragging && draggedCard && (
+                        <div className="absolute bottom-0 left-0 right-0 h-24 bg-blue-100 bg-opacity-80 border-t-4 border-dashed border-blue-500 flex items-center justify-center rounded-t-lg pointer-events-none">
+                          <div className="text-blue-800 font-bold text-lg bg-white px-6 py-3 rounded-lg shadow-xl border-2 border-blue-200">
+                            <div className="flex items-center space-x-2">
+                              <div className="text-xl">📅</div>
+                              <div>拖放卡片到時間軸上對應的年份位置</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 控制面板 */}
+                    <div className="p-4 border-t bg-gray-50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-6">
+                          <span className="text-sm font-medium text-gray-600">
+                            縮放: {(timelineScale * 100).toFixed(0)}%
+                          </span>
+                          <span className="text-sm font-medium text-gray-600">
+                            平移: {timelineOffset > 0 ? '+' : ''}{timelineOffset}px
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            💡 滑鼠滾輪縮放(以滑鼠為中心) • 拖拽時間軸平移
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setTimelineScale(1);
+                            setTimelineOffset(0);
+                          }}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 transition-colors shadow-sm"
+                        >
+                          🔄 重置時間軸
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 下半部：卡片庫 */}
+                <div className="h-80 bg-white shadow-lg border-t">
+                  <div 
+                    className="h-full"
+                    onDrop={handleLibraryDrop}
+                    onDragOver={handleDragOver}
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                  >
+                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+                      <h2 className="text-xl font-bold text-gray-800">📚 歷史卡片庫</h2>
+                      <div className="flex items-center space-x-4 text-sm text-gray-600">
+                        <span>剩餘 {cards.length} 張卡片</span>
+                        <button
+                          onClick={() => setShowEditHelp(!showEditHelp)}
+                          className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                        >
+                          📝 編輯說明
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* 編輯說明區域 */}
+                    {showEditHelp && (
+                      <div className="p-4 bg-yellow-50 border-b border-yellow-200">
+                        <h3 className="font-bold text-yellow-800 mb-2">💡 如何編輯卡片庫：</h3>
+                        <div className="text-sm text-yellow-700 space-y-1">
+                          <p><strong>1. 找到配置區域：</strong>在程式碼開頭的 <code className="bg-yellow-200 px-1 rounded">configData</code> 物件</p>
+                          <p><strong>2. 添加新卡片：</strong>在 <code className="bg-yellow-200 px-1 rounded">historyCards</code> 陣列中加入新物件</p>
+                          <p><strong>3. 卡片格式：</strong></p>
+                          <div className="ml-4 bg-yellow-100 p-2 rounded text-xs font-mono">
+                            {`{ id: 'card-new', type: '發明', name: '新發明', year: 1990, description: '描述內容', colorIndex: 4 }`}
+                          </div>
+                          <p><strong>4. 年份格式：</strong>使用西元年份（如 1990 表示西元1990年）</p>
+                          <p><strong>5. 修改時間軸：</strong>在 <code className="bg-yellow-200 px-1 rounded">timelineMarkers</code> 陣列中添加新年份</p>
+                          <p><strong>6. colorIndex：</strong>0-7 對應不同便利貼顏色</p>
+                          <p><strong>7. 卡片類型：</strong>支援「人物」和「發明」兩種類型</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="p-6 h-64 overflow-y-auto bg-gray-50">
+                      {cards.length === 0 ? (
+                        <div className="flex items-center justify-center h-full text-gray-500 text-center">
+                          <div className="bg-white rounded-lg p-8 shadow-md">
+                            <div className="text-4xl mb-3">🎉</div>
+                            <div className="text-lg font-medium">完成！</div>
+                            <div className="text-sm">所有卡片都已放置到時間軸上</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          {/* 人物卡片區域 */}
+                          {cards.filter(card => card.type === '人物').length > 0 && (
+                            <div className="mb-6">
+                              <h3 className="text-sm font-bold text-blue-800 mb-3 flex items-center">
+                                👤 重要人物 ({cards.filter(card => card.type === '人物').length})
+                              </h3>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                {cards.filter(card => card.type === '人物').map(card => (
+                                  <Card key={card.id} card={card} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* 發明卡片區域 */}
+                          {cards.filter(card => card.type === '發明').length > 0 && (
+                            <div>
+                              <h3 className="text-sm font-bold text-purple-800 mb-3 flex items-center">
+                                💡 重要發明 ({cards.filter(card => card.type === '發明').length})
+                              </h3>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                {cards.filter(card => card.type === '發明').map(card => (
+                                  <Card key={card.id} card={card} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Popup詳細資訊 */}
+              <PopupDetail />
+            </div>
+          );
+        };
+
+        ReactDOM.render(<ComputerHistoryTimeline />, document.getElementById('root'));
+    </script>
+</body>
+</html>
