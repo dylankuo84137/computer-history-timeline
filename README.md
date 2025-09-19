@@ -1,1 +1,12 @@
-# computer-history-timeline
+# 電腦科技發展歷史時間軸
+
+一個互動式的電腦科技發展歷史展示網頁，涵蓋1613年到2022年的重要發展里程碑。
+
+## 功能特色
+- 38張歷史卡片
+- 拖拽式互動
+- 時間軸縮放和平移
+- 詳細歷史資訊
+
+## 線上預覽
+https://dylankuo84137.github.io/computer-history-timeline/
