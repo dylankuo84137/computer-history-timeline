@@ -57,81 +57,78 @@
          * How to edit the card library:
          * 1. Find the configData object below
          * 2. Add new cards to the historyCards array
-         * 3. Card format: { id: 'unique-id', type: 'Person|Invention', name: 'Name', year: YYYY, description: 'Description', colorIndex: 0-7 }
+         * 3. Card format: { id: 'unique-id', type: 'Person|Invention', name: 'Name', year: YYYY, description: 'Description', hint: 'Short hint', colorIndex: 0-7 }
          * 4. Year format: Use AD years (e.g., 1990 for year 1990 AD)
-         * 5. Modify timeline: Add new years to timelineMarkers array
-         * 6. colorIndex: 0-7 corresponds to different sticky note colors
-         * 7. Card types: Support 'Person' (人物) and 'Invention' (發明) types
+         * 5. colorIndex: 0-7 corresponds to different sticky note colors
+         * 6. Card types: Support 'Person' (人物) and 'Invention' (發明) types
+         * 7. hint: Short descriptive text shown before placement (instead of year)
+         * Note: Timeline markers are now dynamically generated based on zoom level
          */
         const configData = {
-          timelineMarkers: [
-            // Important time nodes from 17th century to modern era
-            1600, 1650, 1700, 1750, 1800, 1850, 1900, 1920, 1940, 1960, 1980, 2000, 2020
-          ],
           historyCards: [
             // 17th Century Computing Machines (1600s)
-            { id: 'card-17th-1', type: '人物', name: '理查·布雷斯韋特', year: 1613, description: '首次記錄「電腦 (computer)」一詞，當時指從事計算工作的人，而非機器。', colorIndex: 2 },
-            { id: 'card-17th-2', type: '人物', name: '布萊茲·帕斯卡', year: 1642, description: '發明手搖計算器 (Pascaline)，最初只能做加法，後來改良可做減法和乘法。', colorIndex: 3 },
-            { id: 'card-17th-3', type: '人物', name: '戈特弗里德·萊布尼茨', year: 1694, description: '建造了步進計算器 (Step Reckoner)，第一台可以自動執行加減乘除四種運算的機器，並發明了萊布尼茨輪。', colorIndex: 4 },
+            { id: 'card-17th-1', type: '人物', name: '理查·布雷斯韋特', year: 1613, description: '首次記錄「電腦 (computer)」一詞，當時指從事計算工作的人，而非機器。', hint: '首次定義「電腦」概念的人', colorIndex: 2 },
+            { id: 'card-17th-2', type: '人物', name: '布萊茲·帕斯卡', year: 1642, description: '發明手搖計算器 (Pascaline)，最初只能做加法，後來改良可做減法和乘法。', hint: '發明第一台機械計算器', colorIndex: 3 },
+            { id: 'card-17th-3', type: '人物', name: '戈特弗里德·萊布尼茨', year: 1694, description: '建造了步進計算器 (Step Reckoner)，第一台可以自動執行加減乘除四種運算的機器，並發明了萊布尼茨輪。', hint: '四則運算計算機發明者', colorIndex: 4 },
             
             // 19th Century Babbage Era (1800s)
-            { id: 'card-babbage-1', type: '人物', name: '查爾斯·巴貝奇', year: 1822, description: '電腦之父，提出差分計算機設計，旨在自動化微積分計算以生成可靠的數學表格。', colorIndex: 5 },
-            { id: 'card-babbage-2', type: '發明', name: '分析機 (Analytical Engine)', year: 1837, description: '巴貝奇設計的通用計算機起點，具備資料儲存、運算、輸入和輸出的概念，是現代電腦架構的先驅。', colorIndex: 6 },
-            { id: 'card-ada-1', type: '人物', name: '愛達·勒芙蕾絲', year: 1833, description: '17歲時在巴貝奇的沙龍中認識了他，對差分機展現出極大興趣，開啟了程式設計史。', colorIndex: 7 },
-            { id: 'card-ada-2', type: '發明', name: '第一個電腦程式', year: 1843, description: '愛達·勒芙蕾絲為分析機編寫計算白努利數的演算法，使用了迴圈和次常式等現代程式設計技巧，被視為史上第一個公開發表的電腦程式。', colorIndex: 0 },
-            { id: 'card-diff-2', type: '發明', name: '差分機二號', year: 1847, description: '巴貝奇設計的零件更精簡、可計算31位數的差分機，展現了機械計算的極致。', colorIndex: 1 },
-            { id: 'card-scheutz', type: '人物', name: '佩爾·格奧爾格·舒茲', year: 1855, description: '瑞典發明家，受巴貝奇啟發成功建造並在巴黎萬國博覽會展出全尺寸差分機。', colorIndex: 2 },
+            { id: 'card-babbage-1', type: '人物', name: '查爾斯·巴貝奇', year: 1822, description: '電腦之父，提出差分計算機設計，旨在自動化微積分計算以生成可靠的數學表格。', hint: '被稱為「電腦之父」', colorIndex: 5 },
+            { id: 'card-babbage-2', type: '發明', name: '分析機 (Analytical Engine)', year: 1837, description: '巴貝奇設計的通用計算機起點，具備資料儲存、運算、輸入和輸出的概念，是現代電腦架構的先驅。', hint: '第一台通用計算機概念', colorIndex: 6 },
+            { id: 'card-ada-1', type: '人物', name: '愛達·勒芙蕾絲', year: 1833, description: '17歲時在巴貝奇的沙龍中認識了他，對差分機展現出極大興趣，開啟了程式設計史。', hint: '世界第一位程式設計師', colorIndex: 7 },
+            { id: 'card-ada-2', type: '發明', name: '第一個電腦程式', year: 1843, description: '愛達·勒芙蕾絲為分析機編寫計算白努利數的演算法，使用了迴圈和次常式等現代程式設計技巧，被視為史上第一個公開發表的電腦程式。', hint: '史上第一個電腦程式', colorIndex: 0 },
+            { id: 'card-diff-2', type: '發明', name: '差分機二號', year: 1847, description: '巴貝奇設計的零件更精簡、可計算31位數的差分機，展現了機械計算的極致。', hint: '精密機械計算機', colorIndex: 1 },
+            { id: 'card-scheutz', type: '人物', name: '佩爾·格奧爾格·舒茲', year: 1855, description: '瑞典發明家，受巴貝奇啟發成功建造並在巴黎萬國博覽會展出全尺寸差分機。', hint: '成功建造差分機的發明家', colorIndex: 2 },
             
             // Beginning of Electrical Era (Late 1800s)
-            { id: 'card-tesla', type: '人物', name: '尼古拉·特斯拉', year: 1888, description: '發明高頻交流發電機，使人類正式邁入電氣時代，為後來的電子計算機奠定基礎。', colorIndex: 3 },
-            { id: 'card-hollerith', type: '人物', name: '赫爾曼·何樂禮', year: 1890, description: '現代機械數據處理之父，為美國人口普查設計了電力製表系統，利用打孔卡和電路元件，比人工計算快約10倍。', colorIndex: 4 },
+            { id: 'card-tesla', type: '人物', name: '尼古拉·特斯拉', year: 1888, description: '發明高頻交流發電機，使人類正式邁入電氣時代，為後來的電子計算機奠定基礎。', hint: '電氣時代的開創者', colorIndex: 3 },
+            { id: 'card-hollerith', type: '人物', name: '赫爾曼·何樂禮', year: 1890, description: '現代機械數據處理之父，為美國人口普查設計了電力製表系統，利用打孔卡和電路元件，比人工計算快約10倍。', hint: '機械數據處理之父', colorIndex: 4 },
             
             // 20th Century Theoretical Foundation (1900s-1930s)
-            { id: 'card-ibm', type: '發明', name: 'IBM公司成立', year: 1924, description: '何樂禮的製表機械公司最終發展為萬國商業機械公司 (IBM)，成為電腦產業的重要推手。', colorIndex: 5 },
-            { id: 'card-turing', type: '人物', name: '艾倫·圖靈', year: 1936, description: '提出圖靈機概念，為現代電腦科學和人工智慧奠定了理論基礎。', colorIndex: 6 },
-            { id: 'card-shannon', type: '人物', name: '克勞德·夏農', year: 1937, description: '21歲時發表《繼電器和開關電路的符號分析》論文，被視為數位計算機理論和數位電路設計理論的創始人。', colorIndex: 7 },
-            { id: 'card-ww2', type: '發明', name: '二戰推動電腦發展', year: 1939, description: '第二次世界大戰的爆發推動了軍事和科技競爭，促成了第一台電子電腦的誕生。', colorIndex: 0 },
+            { id: 'card-ibm', type: '發明', name: 'IBM公司成立', year: 1924, description: '何樂禮的製表機械公司最終發展為萬國商業機械公司 (IBM)，成為電腦產業的重要推手。', hint: '電腦巨頭公司的誕生', colorIndex: 5 },
+            { id: 'card-turing', type: '人物', name: '艾倫·圖靈', year: 1936, description: '提出圖靈機概念，為現代電腦科學和人工智慧奠定了理論基礎。', hint: '電腦科學理論之父', colorIndex: 6 },
+            { id: 'card-shannon', type: '人物', name: '克勞德·夏農', year: 1937, description: '21歲時發表《繼電器和開關電路的符號分析》論文，被視為數位計算機理論和數位電路設計理論的創始人。', hint: '數位電路設計理論創始人', colorIndex: 7 },
+            { id: 'card-ww2', type: '發明', name: '二戰推動電腦發展', year: 1939, description: '第二次世界大戰的爆發推動了軍事和科技競爭，促成了第一台電子電腦的誕生。', hint: '促成電子電腦誕生的戰爭', colorIndex: 0 },
             
             // Electronic Computer Era (1940s-1950s)
-            { id: 'card-neumann', type: '人物', name: '約翰·馮·諾伊曼', year: 1945, description: '提出馮諾伊曼架構，這個架構至今仍是大多數電腦系統的基礎設計原理。', colorIndex: 1 },
-            { id: 'card-eniac', type: '發明', name: 'ENIAC', year: 1946, description: '第一台真正的電子數位計算機，重達30噸，佔地167平方米，標誌著電腦時代的開始。', colorIndex: 2 },
-            { id: 'card-transistor', type: '發明', name: '電晶體', year: 1947, description: '貝爾實驗室發明，取代真空管的革命性發明，使電腦變得更小、更快、更可靠。', colorIndex: 3 },
-            { id: 'card-univac', type: '發明', name: 'UNIVAC I', year: 1951, description: '第一台商用電腦，成功預測了艾森豪威爾的總統選舉勝利，向公眾展示了電腦的威力。', colorIndex: 4 },
-            { id: 'card-ada-reprint', type: '發明', name: '愛達筆記再版', year: 1953, description: '愛達·勒芙蕾絲關於巴貝奇分析機的筆記被重新出版，提升了其在電腦發展史上的地位。', colorIndex: 5 },
+            { id: 'card-neumann', type: '人物', name: '約翰·馮·諾伊曼', year: 1945, description: '提出馮諾伊曼架構，這個架構至今仍是大多數電腦系統的基礎設計原理。', hint: '現代電腦架構設計者', colorIndex: 1 },
+            { id: 'card-eniac', type: '發明', name: 'ENIAC', year: 1946, description: '第一台真正的電子數位計算機，重達30噸，佔地167平方米，標誌著電腦時代的開始。', hint: '第一台電子數位計算機', colorIndex: 2 },
+            { id: 'card-transistor', type: '發明', name: '電晶體', year: 1947, description: '貝爾實驗室發明，取代真空管的革命性發明，使電腦變得更小、更快、更可靠。', hint: '取代真空管的革命發明', colorIndex: 3 },
+            { id: 'card-univac', type: '發明', name: 'UNIVAC I', year: 1951, description: '第一台商用電腦，成功預測了艾森豪威爾的總統選舉勝利，向公眾展示了電腦的威力。', hint: '第一台商用電腦', colorIndex: 4 },
+            { id: 'card-ada-reprint', type: '發明', name: '愛達筆記再版', year: 1953, description: '愛達·勒芙蕾絲關於巴貝奇分析機的筆記被重新出版，提升了其在電腦發展史上的地位。', hint: '程式設計史經典重現', colorIndex: 5 },
             
             // Modern Computer Development (1950s-1970s)
-            { id: 'card-ic', type: '發明', name: '集成電路', year: 1958, description: '德州儀器發明，將多個電晶體集成在一個晶片上，大幅提升了電腦的性能和可靠性。', colorIndex: 6 },
-            { id: 'card-mouse', type: '發明', name: '電腦滑鼠', year: 1964, description: '道格拉斯·恩格爾巴特發明，革命性地改變了人機互動方式，讓電腦更容易使用。', colorIndex: 7 },
-            { id: 'card-moore', type: '人物', name: '戈登·摩爾', year: 1965, description: '英特爾創辦人，提出摩爾定律，預測晶片性能每兩年翻倍，至今仍指導著半導體產業。', colorIndex: 0 },
-            { id: 'card-arpanet', type: '發明', name: 'ARPANET', year: 1969, description: '網際網路的前身，第一個封包交換網路，連接了四所美國大學，開啟了網路時代。', colorIndex: 1 },
+            { id: 'card-ic', type: '發明', name: '集成電路', year: 1958, description: '德州儀器發明，將多個電晶體集成在一個晶片上，大幅提升了電腦的性能和可靠性。', hint: '微電子技術重要突破', colorIndex: 6 },
+            { id: 'card-mouse', type: '發明', name: '電腦滑鼠', year: 1964, description: '道格拉斯·恩格爾巴特發明，革命性地改變了人機互動方式，讓電腦更容易使用。', hint: '改變人機互動的設備', colorIndex: 7 },
+            { id: 'card-moore', type: '人物', name: '戈登·摩爾', year: 1965, description: '英特爾創辦人，提出摩爾定律，預測晶片性能每兩年翻倍，至今仍指導著半導體產業。', hint: '預測晶片發展的定律提出者', colorIndex: 0 },
+            { id: 'card-arpanet', type: '發明', name: 'ARPANET', year: 1969, description: '網際網路的前身，第一個封包交換網路，連接了四所美國大學，開啟了網路時代。', hint: '網際網路的前身', colorIndex: 1 },
             
             // Microcomputer Revolution (1970s-1980s)
-            { id: 'card-microprocessor', type: '發明', name: '微處理器', year: 1971, description: 'Intel 4004，第一款商用微處理器，開創了個人電腦時代的技術基礎。', colorIndex: 2 },
-            { id: 'card-floppy', type: '發明', name: '軟碟', year: 1971, description: 'IBM發明，提供了可攜式資料儲存方式，讓程式和資料能在不同電腦間轉移。', colorIndex: 3 },
-            { id: 'card-gates', type: '人物', name: '比爾·蓋茲', year: 1975, description: 'Microsoft創辦人，推動了個人電腦軟體的普及，讓電腦成為每個人都能使用的工具。', colorIndex: 4 },
-            { id: 'card-jobs', type: '人物', name: '史蒂夫·賈伯斯', year: 1976, description: '蘋果電腦創辦人，以用戶體驗為中心的設計理念，革命性地改變了個人電腦產業。', colorIndex: 5 },
-            { id: 'card-apple2', type: '發明', name: 'Apple II', year: 1977, description: '第一台成功的個人電腦，配備彩色顯示和聲音功能，讓電腦走入家庭。', colorIndex: 6 },
-            { id: 'card-ada-lang', type: '發明', name: 'Ada程式語言', year: 1980, description: '美國國防部將其電腦程式語言以「Ada」命名，以紀念愛達·勒芙蕾絲這位世界第一位程式設計師。', colorIndex: 7 },
+            { id: 'card-microprocessor', type: '發明', name: '微處理器', year: 1971, description: 'Intel 4004，第一款商用微處理器，開創了個人電腦時代的技術基礎。', hint: '個人電腦時代的核心技術', colorIndex: 2 },
+            { id: 'card-floppy', type: '發明', name: '軟碟', year: 1971, description: 'IBM發明，提供了可攜式資料儲存方式，讓程式和資料能在不同電腦間轉移。', hint: '第一種可攜式儲存媒體', colorIndex: 3 },
+            { id: 'card-gates', type: '人物', name: '比爾·蓋茲', year: 1975, description: 'Microsoft創辦人，推動了個人電腦軟體的普及，讓電腦成為每個人都能使用的工具。', hint: '軟體巨頭公司創辦人', colorIndex: 4 },
+            { id: 'card-jobs', type: '人物', name: '史蒂夫·賈伯斯', year: 1976, description: '蘋果電腦創辦人，以用戶體驗為中心的設計理念，革命性地改變了個人電腦產業。', hint: '重視設計的電腦公司創辦人', colorIndex: 5 },
+            { id: 'card-apple2', type: '發明', name: 'Apple II', year: 1977, description: '第一台成功的個人電腦，配備彩色顯示和聲音功能，讓電腦走入家庭。', hint: '成功的家用個人電腦', colorIndex: 6 },
+            { id: 'card-ada-lang', type: '發明', name: 'Ada程式語言', year: 1980, description: '美國國防部將其電腦程式語言以「Ada」命名，以紀念愛達·勒芙蕾絲這位世界第一位程式設計師。', hint: '紀念首位程式設計師的語言', colorIndex: 7 },
             
             // Personal Computer Popularization (1980s-1990s)
-            { id: 'card-ibm-pc', type: '發明', name: 'IBM PC', year: 1981, description: '建立了個人電腦的工業標準，開創了PC兼容機的時代。', colorIndex: 0 },
-            { id: 'card-lotus', type: '發明', name: 'Lotus 1-2-3', year: 1983, description: 'IBM PC的第一個殺手級應用程式，電子試算表軟體，推動了商業電腦化。', colorIndex: 1 },
-            { id: 'card-mac', type: '發明', name: 'Macintosh', year: 1984, description: '第一台成功商業化的圖形使用者介面電腦，改變了人與電腦的互動方式。', colorIndex: 2 },
-            { id: 'card-windows', type: '發明', name: 'Windows 1.0', year: 1985, description: 'Microsoft推出的第一個圖形使用者介面作業系統，讓DOS電腦也能使用圖形界面。', colorIndex: 3 },
+            { id: 'card-ibm-pc', type: '發明', name: 'IBM PC', year: 1981, description: '建立了個人電腦的工業標準，開創了PC兼容機的時代。', hint: '個人電腦工業標準制定者', colorIndex: 0 },
+            { id: 'card-lotus', type: '發明', name: 'Lotus 1-2-3', year: 1983, description: 'IBM PC的第一個殺手級應用程式，電子試算表軟體，推動了商業電腦化。', hint: '第一個殺手級應用程式', colorIndex: 1 },
+            { id: 'card-mac', type: '發明', name: 'Macintosh', year: 1984, description: '第一台成功商業化的圖形使用者介面電腦，改變了人與電腦的互動方式。', hint: '圖形介面的先驅電腦', colorIndex: 2 },
+            { id: 'card-windows', type: '發明', name: 'Windows 1.0', year: 1985, description: 'Microsoft推出的第一個圖形使用者介面作業系統，讓DOS電腦也能使用圖形界面。', hint: '普及圖形介面的作業系統', colorIndex: 3 },
             
             // Internet Era (1990s-2000s)
-            { id: 'card-www', type: '發明', name: 'World Wide Web', year: 1989, description: '提姆·柏納斯-李發明萬維網，徹底改變了資訊傳播方式，開啟了網際網路時代。', colorIndex: 4 },
-            { id: 'card-linux', type: '發明', name: 'Linux', year: 1991, description: '林納斯·托瓦茲開發的開源作業系統，推動了開源軟體運動，成為伺服器主流系統。', colorIndex: 5 },
-            { id: 'card-mosaic', type: '發明', name: 'Mosaic瀏覽器', year: 1993, description: '第一個圖形化網頁瀏覽器，讓一般大眾能夠輕鬆使用網際網路。', colorIndex: 6 },
-            { id: 'card-google', type: '發明', name: 'Google搜尋引擎', year: 1998, description: '改變資訊檢索方式，讓網路上的龐大資訊變得易於搜尋和存取。', colorIndex: 7 },
+            { id: 'card-www', type: '發明', name: 'World Wide Web', year: 1989, description: '提姆·柏納斯-李發明萬維網，徹底改變了資訊傳播方式，開啟了網際網路時代。', hint: '改變世界的網路發明', colorIndex: 4 },
+            { id: 'card-linux', type: '發明', name: 'Linux', year: 1991, description: '林納斯·托瓦茲開發的開源作業系統，推動了開源軟體運動，成為伺服器主流系統。', hint: '開源軟體運動的代表', colorIndex: 5 },
+            { id: 'card-mosaic', type: '發明', name: 'Mosaic瀏覽器', year: 1993, description: '第一個圖形化網頁瀏覽器，讓一般大眾能夠輕鬆使用網際網路。', hint: '第一個圖形化瀏覽器', colorIndex: 6 },
+            { id: 'card-google', type: '發明', name: 'Google搜尋引擎', year: 1998, description: '改變資訊檢索方式，讓網路上的龐大資訊變得易於搜尋和存取。', hint: '改變搜尋方式的引擎', colorIndex: 7 },
             
             // Mobile and Cloud Era (2000s-2010s)
-            { id: 'card-iphone', type: '發明', name: 'iPhone', year: 2007, description: '蘋果推出的智慧手機，觸控螢幕和直觀介面革命性地改變了行動通訊。', colorIndex: 0 },
-            { id: 'card-android', type: '發明', name: 'Android', year: 2008, description: 'Google開發的開源行動作業系統，推動了智慧手機的普及。', colorIndex: 1 },
-            { id: 'card-ipad', type: '發明', name: 'iPad', year: 2010, description: '開創了平板電腦市場，改變了人們消費媒體內容和輕度計算的方式。', colorIndex: 2 },
+            { id: 'card-iphone', type: '發明', name: 'iPhone', year: 2007, description: '蘋果推出的智慧手機，觸控螢幕和直觀介面革命性地改變了行動通訊。', hint: '觸控革命的智慧手機', colorIndex: 0 },
+            { id: 'card-android', type: '發明', name: 'Android', year: 2008, description: 'Google開發的開源行動作業系統，推動了智慧手機的普及。', hint: '開源的行動作業系統', colorIndex: 1 },
+            { id: 'card-ipad', type: '發明', name: 'iPad', year: 2010, description: '開創了平板電腦市場，改變了人們消費媒體內容和輕度計算的方式。', hint: '開創平板電腦市場', colorIndex: 2 },
             
             // AI and Modern Technology (2020s)
-            { id: 'card-chatgpt', type: '發明', name: 'ChatGPT', year: 2022, description: 'OpenAI推出的對話式AI，讓人工智慧技術進入大眾生活，開啟AI時代。', colorIndex: 3 }
+            { id: 'card-chatgpt', type: '發明', name: 'ChatGPT', year: 2022, description: 'OpenAI推出的對話式AI，讓人工智慧技術進入大眾生活，開啟AI時代。', hint: '對話式AI進入大眾生活', colorIndex: 3 }
           ]
         };
 
@@ -155,6 +152,33 @@
           const minYear = 1600;  // Starting from 17th century
           const maxYear = 2030;  // Until year 2030
           const yearRange = maxYear - minYear;
+
+          // Generate dynamic year markers based on zoom level
+          const generateYearMarkers = () => {
+            let interval;
+            
+            // Determine interval based on scale - more detailed when zoomed in
+            if (timelineScale >= 2.5) {
+              interval = 10; // Every 10 years when very zoomed in
+            } else if (timelineScale >= 1.5) {
+              interval = 25; // Every 25 years when zoomed in
+            } else if (timelineScale >= 0.8) {
+              interval = 50; // Every 50 years at normal scale
+            } else {
+              interval = 100; // Every 100 years when zoomed out
+            }
+            
+            const markers = [];
+            const startYear = Math.ceil(minYear / interval) * interval;
+            
+            for (let year = startYear; year <= maxYear; year += interval) {
+              markers.push(year);
+            }
+            
+            return markers;
+          };
+
+          const dynamicYearMarkers = generateYearMarkers();
 
           // Convert year to pixel position (linear)
           const yearToPixel = (year) => {
@@ -441,15 +465,15 @@
                   {card.type}
                 </div>
                 <div className="text-sm font-semibold text-gray-800 mb-1 leading-tight">{card.name}</div>
-                {/* Hide year for unplaced cards, show for placed cards */}
+                {/* Show hint for unplaced cards, show year for placed cards */}
                 {isPlaced && (
                   <div className="text-xs text-gray-600">
                     {placedYear || card.year}年
                   </div>
                 )}
                 {!isPlaced && (
-                  <div className="text-xs text-gray-400">
-                    拖拽到時間軸
+                  <div className="text-xs text-gray-500 italic">
+                    {card.hint}
                   </div>
                 )}
               </div>
@@ -536,9 +560,9 @@
                 </div>
               </div>
 
-              {/* Error message display */}
+              {/* Error message display - fixed position at top */}
               {errorMessage && (
-                <div className="fixed top-32 left-1/2 transform -translate-x-1/2 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg max-w-md">
+                <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg max-w-md">
                   <div className="flex items-center">
                     <span className="text-xl mr-2">❌</span>
                     <span>{errorMessage}</span>
@@ -583,8 +607,8 @@
                         }}
                       ></div>
                       
-                      {/* Year markers */}
-                      {configData.timelineMarkers.map(year => {
+                      {/* Year markers - dynamic based on zoom level */}
+                      {dynamicYearMarkers.map(year => {
                         const xPos = yearToPixel(year);
                         const containerWidth = timelineRef.current ? timelineRef.current.clientWidth : 800;
                         if (xPos < -100 || xPos > containerWidth + 100) return null;
