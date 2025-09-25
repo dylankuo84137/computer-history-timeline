@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>電腦科技發展歷史時間軸</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -31,13 +31,35 @@
             font-size: 12px;
             letter-spacing: 2px;
         }
+        .card-dragging {
+            opacity: 0.8;
+            transform: rotate(5deg) scale(1.1);
+            z-index: 1000;
+            position: fixed;
+            pointer-events: none;
+        }
+        .touch-drag-preview {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.8;
+        }
+        
+        /* 防止觸控時的文字選取 */
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useCallback } = React;
 
         // Color configuration for sticky note cards
         const stickyColors = [
@@ -51,28 +73,16 @@
           { bg: 'bg-red-200', border: 'border-red-400', hover: 'hover:bg-red-300' }
         ];
 
-        /*
-         * CONFIGURATION DATA - Computer History Timeline (17th Century to Modern Era)
-         * 
-         * How to edit the card library:
-         * 1. Find the configData object below
-         * 2. Add new cards to the historyCards array
-         * 3. Card format: { id: 'unique-id', type: 'Person|Invention', name: 'Name', year: YYYY, description: 'Description', hint: 'Short hint', colorIndex: 0-7 }
-         * 4. Year format: Use AD years (e.g., 1990 for year 1990 AD)
-         * 5. colorIndex: 0-7 corresponds to different sticky note colors
-         * 6. Card types: Support 'Person' (人物) and 'Invention' (發明) types
-         * 7. hint: Short descriptive text shown before placement (instead of year)
-         * Note: Timeline markers are now dynamically generated based on zoom level
-         */
+        // Configuration data
         const configData = {
           historyCards: [
             // 17th Century Computing Machines (1600s)
             { id: 'card-17th-1', type: '人物', name: '理查·布雷斯韋特', year: 1613, description: '首次記錄「電腦 (computer)」一詞，當時指從事計算工作的人，而非機器。', hint: '首次定義「電腦」概念的人', colorIndex: 2 },
             { id: 'card-17th-2', type: '人物', name: '布萊茲·帕斯卡', year: 1642, description: '發明手搖計算器 (Pascaline)，最初只能做加法，後來改良可做減法和乘法。', hint: '發明第一台機械計算器', colorIndex: 3 },
-            { id: 'card-17th-3', type: '人物', name: '戈特弗里德·萊布尼茨', year: 1694, description: '建造了步進計算器 (Step Reckoner)，第一台可以自動執行加減乘除四種運算的機器，並發明了萊布尼茨輪。', hint: '四則運算計算機發明者', colorIndex: 4 },
+            { id: 'card-17th-3', type: '人物', name: '戈特弗里德·萊布尼茲', year: 1694, description: '建造了步進計算器 (Step Reckoner)，第一台可以自動執行加減乘除四種運算的機器，並發明了萊布尼茲輪。', hint: '四則運算計算機發明者', colorIndex: 4 },
             
             // 19th Century Babbage Era (1800s)
-            { id: 'card-babbage-1', type: '人物', name: '查爾斯·巴貝奇', year: 1822, description: '電腦之父，提出差分計算機設計，旨在自動化微積分計算以生成可靠的數學表格。', hint: '被稱為「電腦之父」', colorIndex: 5 },
+            { id: 'card-babbage-1', type: '人物', name: '查爾斯·巴貝奇', year: 1822, description: '電腦之父，提出差分計算機設計，旨在自動化微積分計算以生產可靠的數學表格。', hint: '被稱為「電腦之父」', colorIndex: 5 },
             { id: 'card-babbage-2', type: '發明', name: '分析機 (Analytical Engine)', year: 1837, description: '巴貝奇設計的通用計算機起點，具備資料儲存、運算、輸入和輸出的概念，是現代電腦架構的先驅。', hint: '第一台通用計算機概念', colorIndex: 6 },
             { id: 'card-ada-1', type: '人物', name: '愛達·勒芙蕾絲', year: 1833, description: '17歲時在巴貝奇的沙龍中認識了他，對差分機展現出極大興趣，開啟了程式設計史。', hint: '世界第一位程式設計師', colorIndex: 7 },
             { id: 'card-ada-2', type: '發明', name: '第一個電腦程式', year: 1843, description: '愛達·勒芙蕾絲為分析機編寫計算白努利數的演算法，使用了迴圈和次常式等現代程式設計技巧，被視為史上第一個公開發表的電腦程式。', hint: '史上第一個電腦程式', colorIndex: 0 },
@@ -91,7 +101,7 @@
             
             // Electronic Computer Era (1940s-1950s)
             { id: 'card-neumann', type: '人物', name: '約翰·馮·諾伊曼', year: 1945, description: '提出馮諾伊曼架構，這個架構至今仍是大多數電腦系統的基礎設計原理。', hint: '現代電腦架構設計者', colorIndex: 1 },
-            { id: 'card-eniac', type: '發明', name: 'ENIAC', year: 1946, description: '第一台真正的電子數位計算機，重達30噸，佔地167平方米，標誌著電腦時代的開始。', hint: '第一台電子數位計算機', colorIndex: 2 },
+            { id: 'card-eniac', type: '發明', name: 'ENIAC', year: 1946, description: '第一台真正的電子數位計算機，重達30噸，占地167平方米，標誌著電腦時代的開始。', hint: '第一台電子數位計算機', colorIndex: 2 },
             { id: 'card-transistor', type: '發明', name: '電晶體', year: 1947, description: '貝爾實驗室發明，取代真空管的革命性發明，使電腦變得更小、更快、更可靠。', hint: '取代真空管的革命發明', colorIndex: 3 },
             { id: 'card-univac', type: '發明', name: 'UNIVAC I', year: 1951, description: '第一台商用電腦，成功預測了艾森豪威爾的總統選舉勝利，向公眾展示了電腦的威力。', hint: '第一台商用電腦', colorIndex: 4 },
             { id: 'card-ada-reprint', type: '發明', name: '愛達筆記再版', year: 1953, description: '愛達·勒芙蕾絲關於巴貝奇分析機的筆記被重新出版，提升了其在電腦發展史上的地位。', hint: '程式設計史經典重現', colorIndex: 5 },
@@ -144,28 +154,70 @@
           const [isTimelineDragging, setIsTimelineDragging] = useState(false);
           const [dragStart, setDragStart] = useState({ x: 0, offset: 0 });
           const [errorMessage, setErrorMessage] = useState('');
-          const [timelineHeight, setTimelineHeight] = useState(60); // Percentage of screen height
+          const [timelineHeight, setTimelineHeight] = useState(60);
           const [isResizing, setIsResizing] = useState(false);
           const timelineRef = useRef(null);
+          
+          // 觸控拖拽相關狀態
+          const [touchDragCard, setTouchDragCard] = useState(null);
+          const [touchDragPosition, setTouchDragPosition] = useState({ x: 0, y: 0 });
+          const [touchStartPosition, setTouchStartPosition] = useState({ x: 0, y: 0 });
+          const [isTouchDragging, setIsTouchDragging] = useState(false);
+          
+          // 觸控縮放相關狀態
+          const [lastTouchDistance, setLastTouchDistance] = useState(0);
+          const [lastTouchCenter, setLastTouchCenter] = useState({ x: 0, y: 0 });
 
-          // Timeline configuration - focused on 17th century to modern era
-          const minYear = 1600;  // Starting from 17th century
-          const maxYear = 2030;  // Until year 2030
+          const minYear = 1600;
+          const maxYear = 2030;
           const yearRange = maxYear - minYear;
+
+          // 初始化時間軸顯示整個年份範圍
+          useEffect(() => {
+            if (timelineRef.current && timelineScale === 1 && timelineOffset === 0) {
+              const containerWidth = timelineRef.current.clientWidth;
+              const timelineWidth = 2000 * timelineScale;
+              
+              // 如果時間軸比容器寬，則居中顯示
+              if (timelineWidth > containerWidth) {
+                const centerOffset = (containerWidth - timelineWidth) / 2;
+                setTimelineOffset(centerOffset);
+              } else {
+                // 如果時間軸比容器窄，則調整縮放以適應容器
+                const newScale = containerWidth / 2000;
+                setTimelineScale(newScale);
+                setTimelineOffset(0);
+              }
+            }
+          }, [timelineRef.current]);
+
+          // 計算兩點間距離（用於觸控縮放）
+          const getTouchDistance = (touch1, touch2) => {
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+          };
+
+          // 計算兩點中心（用於觸控縮放）
+          const getTouchCenter = (touch1, touch2) => {
+            return {
+              x: (touch1.clientX + touch2.clientX) / 2,
+              y: (touch1.clientY + touch2.clientY) / 2
+            };
+          };
 
           // Generate dynamic year markers based on zoom level
           const generateYearMarkers = () => {
             let interval;
             
-            // Determine interval based on scale - more detailed when zoomed in
             if (timelineScale >= 2.5) {
-              interval = 10; // Every 10 years when very zoomed in
+              interval = 10;
             } else if (timelineScale >= 1.5) {
-              interval = 25; // Every 25 years when zoomed in
+              interval = 25;
             } else if (timelineScale >= 0.8) {
-              interval = 50; // Every 50 years at normal scale
+              interval = 50;
             } else {
-              interval = 100; // Every 100 years when zoomed out
+              interval = 100;
             }
             
             const markers = [];
@@ -180,51 +232,200 @@
 
           const dynamicYearMarkers = generateYearMarkers();
 
-          // Convert year to pixel position (linear)
           const yearToPixel = (year) => {
             const ratio = (year - minYear) / yearRange;
             return ratio * 2000 * timelineScale + timelineOffset;
           };
 
-          // Convert pixel position to year (linear)
           const pixelToYear = (pixel) => {
             const ratio = (pixel - timelineOffset) / (2000 * timelineScale);
             return Math.round(minYear + ratio * yearRange);
           };
 
-          // Handle timeline zoom - centered on mouse position
+          // 處理滑鼠滾輪縮放
           const handleTimelineZoom = (event) => {
             event.preventDefault();
             const delta = event.deltaY * -0.001;
             const newScale = Math.max(0.5, Math.min(3, timelineScale + delta));
             
             if (newScale !== timelineScale && timelineRef.current) {
-              // Get mouse position in timeline
               const rect = timelineRef.current.getBoundingClientRect();
               const mouseX = event.clientX - rect.left;
-              
-              // Calculate scale ratio change
               const scaleRatio = newScale / timelineScale;
-              
-              // Calculate new offset to keep mouse position year unchanged
               const newOffset = mouseX - (mouseX - timelineOffset) * scaleRatio;
               
-              // Update state
               setTimelineScale(newScale);
               setTimelineOffset(newOffset);
             }
           };
 
+          // 處理觸控縮放開始
+          const handleTouchStart = (e) => {
+            if (e.touches.length === 2) {
+              // 雙指觸控縮放
+              e.preventDefault();
+              const distance = getTouchDistance(e.touches[0], e.touches[1]);
+              const center = getTouchCenter(e.touches[0], e.touches[1]);
+              setLastTouchDistance(distance);
+              setLastTouchCenter(center);
+            } else if (e.touches.length === 1) {
+              // 單指拖拽時間軸（如果點擊在時間軸背景上）
+              if (e.target === timelineRef.current || e.target.classList.contains('timeline-background')) {
+                setIsTimelineDragging(true);
+                setDragStart({
+                  x: e.touches[0].clientX,
+                  offset: timelineOffset
+                });
+                setPopupCard(null);
+              }
+            }
+          };
+
+          // 處理觸控縮放移動
+          const handleTouchMove = (e) => {
+            if (e.touches.length === 2) {
+              // 雙指縮放
+              e.preventDefault();
+              const distance = getTouchDistance(e.touches[0], e.touches[1]);
+              const center = getTouchCenter(e.touches[0], e.touches[1]);
+              
+              if (lastTouchDistance > 0 && timelineRef.current) {
+                const scaleChange = distance / lastTouchDistance;
+                const newScale = Math.max(0.5, Math.min(3, timelineScale * scaleChange));
+                
+                if (newScale !== timelineScale) {
+                  const rect = timelineRef.current.getBoundingClientRect();
+                  const centerX = center.x - rect.left;
+                  const scaleRatio = newScale / timelineScale;
+                  const newOffset = centerX - (centerX - timelineOffset) * scaleRatio;
+                  
+                  setTimelineScale(newScale);
+                  setTimelineOffset(newOffset);
+                }
+                
+                setLastTouchDistance(distance);
+                setLastTouchCenter(center);
+              }
+            } else if (e.touches.length === 1 && isTimelineDragging) {
+              // 單指拖拽時間軸
+              const deltaX = e.touches[0].clientX - dragStart.x;
+              setTimelineOffset(dragStart.offset + deltaX);
+            }
+          };
+
+          // 處理觸控結束
+          const handleTouchEnd = (e) => {
+            if (e.touches.length < 2) {
+              setLastTouchDistance(0);
+            }
+            if (e.touches.length === 0) {
+              setIsTimelineDragging(false);
+            }
+          };
+
+          // 處理卡片觸控開始
+          const handleCardTouchStart = (e, card) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const touch = e.touches[0];
+            setTouchDragCard(card);
+            setTouchStartPosition({ x: touch.clientX, y: touch.clientY });
+            setTouchDragPosition({ x: touch.clientX, y: touch.clientY });
+            setIsTouchDragging(false);
+            setPopupCard(null);
+          };
+
+          // 處理卡片觸控移動
+          const handleCardTouchMove = (e) => {
+            if (!touchDragCard) return;
+            
+            e.preventDefault();
+            const touch = e.touches[0];
+            const deltaX = Math.abs(touch.clientX - touchStartPosition.x);
+            const deltaY = Math.abs(touch.clientY - touchStartPosition.y);
+            
+            // 如果移動距離超過閾值，開始拖拽
+            if (!isTouchDragging && (deltaX > 10 || deltaY > 10)) {
+              setIsTouchDragging(true);
+              setIsDragging(true);
+              setDraggedCard(touchDragCard);
+            }
+            
+            if (isTouchDragging) {
+              setTouchDragPosition({ x: touch.clientX, y: touch.clientY });
+            }
+          };
+
+          // 處理卡片觸控結束
+          const handleCardTouchEnd = (e) => {
+            if (!touchDragCard) return;
+            
+            e.preventDefault();
+            
+            if (isTouchDragging && timelineRef.current) {
+              // 檢查是否放置在時間軸上
+              const timelineRect = timelineRef.current.getBoundingClientRect();
+              const touch = e.changedTouches[0];
+              
+              if (touch.clientY >= timelineRect.top && touch.clientY <= timelineRect.bottom &&
+                  touch.clientX >= timelineRect.left && touch.clientX <= timelineRect.right) {
+                
+                const dropX = touch.clientX - timelineRect.left;
+                const dropYear = pixelToYear(dropX);
+                const correctYear = touchDragCard.year;
+                const yearDifference = Math.abs(dropYear - correctYear);
+                
+                if (yearDifference <= 25) {
+                  // 正確放置
+                  if (cards.find(card => card.id === touchDragCard.id)) {
+                    setCards(cards.filter(card => card.id !== touchDragCard.id));
+                    const newCard = { ...touchDragCard, placedYear: correctYear };
+                    setPlacedCards([...placedCards, newCard]);
+                    
+                    setTimeout(() => {
+                      const cardPixelX = yearToPixel(correctYear);
+                      setPopupPosition({
+                        x: timelineRect.left + cardPixelX,
+                        y: timelineRect.top + timelineRect.height * 0.3
+                      });
+                      setPopupCard(newCard);
+                    }, 100);
+                  }
+                } else {
+                  // 錯誤放置
+                  setErrorMessage(`請嘗試將「${touchDragCard.name}」放置到更接近其正確年代的位置！正確年代是${correctYear}年。`);
+                }
+              }
+            } else if (!isTouchDragging) {
+              // 如果沒有拖拽，則視為點擊
+              if (placedCards.find(c => c.id === touchDragCard.id)) {
+                // 顯示彈窗
+                const rect = e.target.getBoundingClientRect();
+                setPopupPosition({
+                  x: rect.left + rect.width / 2,
+                  y: rect.top - 10
+                });
+                setPopupCard(touchDragCard);
+              }
+            }
+            
+            // 重置觸控狀態
+            setTouchDragCard(null);
+            setIsTouchDragging(false);
+            setIsDragging(false);
+            setDraggedCard(null);
+          };
+
           // Handle timeline drag start
           const handleTimelineMouseDown = (e) => {
-            // Only start dragging timeline when clicking on empty area
             if (e.target === timelineRef.current || e.target.classList.contains('timeline-background')) {
               setIsTimelineDragging(true);
               setDragStart({
                 x: e.clientX,
                 offset: timelineOffset
               });
-              setPopupCard(null); // Close any open popup
+              setPopupCard(null);
             }
           };
 
@@ -250,9 +451,9 @@
           const handleResizerMouseMove = (e) => {
             if (isResizing) {
               const windowHeight = window.innerHeight;
-              const headerHeight = 120; // Approximate header height
+              const headerHeight = 120;
               const newHeight = ((e.clientY - headerHeight) / (windowHeight - headerHeight)) * 100;
-              setTimelineHeight(Math.max(30, Math.min(80, newHeight))); // Limit between 30% and 80%
+              setTimelineHeight(Math.max(30, Math.min(80, newHeight)));
             }
           };
 
@@ -298,24 +499,6 @@
             };
           }, [isResizing]);
 
-          // Add global drag end listeners
-          useEffect(() => {
-            const handleGlobalDragEnd = () => {
-              if (isDragging) {
-                setDraggedCard(null);
-                setIsDragging(false);
-              }
-            };
-
-            document.addEventListener('dragend', handleGlobalDragEnd);
-            document.addEventListener('drop', handleGlobalDragEnd);
-
-            return () => {
-              document.removeEventListener('dragend', handleGlobalDragEnd);
-              document.removeEventListener('drop', handleGlobalDragEnd);
-            };
-          }, [isDragging]);
-
           // Auto-hide error message after 3 seconds
           useEffect(() => {
             if (errorMessage) {
@@ -326,12 +509,12 @@
             }
           }, [errorMessage]);
 
-          // Handle drag start
+          // Handle drag start (滑鼠拖拽)
           const handleDragStart = (e, card) => {
             setDraggedCard(card);
             setIsDragging(true);
-            setPopupCard(null); // Close popup
-            setErrorMessage(''); // Clear any error message
+            setPopupCard(null);
+            setErrorMessage('');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/html', card.id);
           };
@@ -342,7 +525,7 @@
             setIsDragging(false);
           };
 
-          // Handle timeline drop
+          // Handle timeline drop (滑鼠拖拽)
           const handleTimelineDrop = (e) => {
             e.preventDefault();
             if (!draggedCard) return;
@@ -351,18 +534,15 @@
             const dropX = e.clientX - timelineRect.left;
             const dropYear = pixelToYear(dropX);
 
-            // Check if dropped within 25 years of correct year
             const correctYear = draggedCard.year;
             const yearDifference = Math.abs(dropYear - correctYear);
             
             if (yearDifference <= 25) {
-              // Correct placement - snap to correct year and show popup
               if (cards.find(card => card.id === draggedCard.id)) {
                 setCards(cards.filter(card => card.id !== draggedCard.id));
                 const newCard = { ...draggedCard, placedYear: correctYear };
                 setPlacedCards([...placedCards, newCard]);
                 
-                // Show popup immediately for correct placement
                 setTimeout(() => {
                   const cardPixelX = yearToPixel(correctYear);
                   setPopupPosition({
@@ -373,11 +553,9 @@
                 }, 100);
               }
             } else {
-              // Incorrect placement - show error message
               setErrorMessage(`請嘗試將「${draggedCard.name}」放置到更接近其正確年代的位置！正確年代是${correctYear}年。`);
             }
 
-            // Clear dragging state
             setDraggedCard(null);
             setIsDragging(false);
           };
@@ -391,7 +569,6 @@
             setCards([...cards, draggedCard]);
             setPopupCard(null);
 
-            // Clear dragging state
             setDraggedCard(null);
             setIsDragging(false);
           };
@@ -410,10 +587,9 @@
             e.preventDefault();
           };
 
-          // Handle card click to show popup (only for placed cards)
+          // Handle card click to show popup (只用於滑鼠點擊)
           const handleCardClick = (e, card) => {
             e.stopPropagation();
-            // Prevent triggering during timeline dragging
             if (isTimelineDragging) return;
             
             if (placedCards.find(c => c.id === card.id)) {
@@ -434,18 +610,19 @@
           // Card component
           const Card = ({ card, isPlaced = false, placedYear = null }) => {
             const colorStyle = stickyColors[card.colorIndex % stickyColors.length];
-            const isCurrentlyDragging = isDragging && draggedCard?.id === card.id;
-            
-            // Calculate card scale based on timeline scale for placed cards
+            const isCurrentlyDragging = isDragging && (draggedCard?.id === card.id || touchDragCard?.id === card.id);
             const cardScale = isPlaced ? Math.min(1.5, Math.max(0.8, timelineScale)) : 1;
             
             return (
               <div
-                draggable
+                draggable={!('ontouchstart' in window)} // 只在非觸控設備上啟用HTML5拖拽
                 onDragStart={(e) => handleDragStart(e, card)}
                 onDragEnd={handleDragEnd}
                 onClick={(e) => handleCardClick(e, card)}
-                className={`p-3 rounded-lg shadow-md cursor-move transition-all hover:shadow-xl select-none transform hover:scale-105 ${
+                onTouchStart={(e) => handleCardTouchStart(e, card)}
+                onTouchMove={handleCardTouchMove}
+                onTouchEnd={handleCardTouchEnd}
+                className={`p-3 rounded-lg shadow-md cursor-move transition-all hover:shadow-xl select-none transform hover:scale-105 no-select ${
                   colorStyle.bg
                 } ${colorStyle.border} ${colorStyle.hover} ${
                   isCurrentlyDragging ? 'opacity-50 rotate-6 scale-110' : ''
@@ -465,7 +642,6 @@
                   {card.type}
                 </div>
                 <div className="text-sm font-semibold text-gray-800 mb-1 leading-tight">{card.name}</div>
-                {/* Show hint for unplaced cards, show year for placed cards */}
                 {isPlaced && (
                   <div className="text-xs text-gray-600">
                     {placedYear || card.year}年
@@ -480,19 +656,45 @@
             );
           };
 
+          // 觸控拖拽預覽
+          const TouchDragPreview = () => {
+            if (!isTouchDragging || !touchDragCard) return null;
+            
+            const colorStyle = stickyColors[touchDragCard.colorIndex % stickyColors.length];
+            
+            return (
+              <div
+                className={`touch-drag-preview p-3 rounded-lg shadow-lg ${colorStyle.bg} ${colorStyle.border}`}
+                style={{
+                  left: touchDragPosition.x - 50,
+                  top: touchDragPosition.y - 50,
+                  transform: 'rotate(5deg) scale(1.1)',
+                  minHeight: '90px',
+                  width: '100px'
+                }}
+              >
+                <div className={`text-xs font-bold mb-1 ${
+                  touchDragCard.type === '人物' ? 'text-blue-800' : 'text-purple-800'
+                }`}>
+                  {touchDragCard.type}
+                </div>
+                <div className="text-sm font-semibold text-gray-800 mb-1 leading-tight">{touchDragCard.name}</div>
+              </div>
+            );
+          };
+
           // Popup component
           const PopupDetail = () => {
             if (!popupCard) return null;
 
             return (
               <>
-                {/* Overlay */}
                 <div 
                   className="fixed inset-0 z-40"
                   onClick={closePopup}
+                  onTouchStart={closePopup}
                 />
                 
-                {/* Popup content */}
                 <div 
                   className="fixed z-50 bg-white rounded-lg shadow-2xl border-2 border-gray-200 p-4 max-w-xs"
                   style={{
@@ -502,7 +704,6 @@
                     boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
                   }}
                 >
-                  {/* Arrow */}
                   <div 
                     className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0"
                     style={{
@@ -554,13 +755,16 @@
                   <span className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm mr-2">
                     ✨ 38張歷史卡片
                   </span>
-                  <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                  <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm mr-2">
                     📅 1600-2030年電腦發展史
+                  </span>
+                  <span className="inline-block bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
+                    📱 觸控友善
                   </span>
                 </div>
               </div>
 
-              {/* Error message display - fixed position at top */}
+              {/* Error message display */}
               {errorMessage && (
                 <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg max-w-md">
                   <div className="flex items-center">
@@ -571,18 +775,18 @@
               )}
 
               <div className="flex flex-col h-screen">
-                {/* Timeline area - adjustable height */}
+                {/* Timeline area */}
                 <div className="p-6" style={{ height: `${timelineHeight}vh` }}>
                   <div className="bg-white rounded-lg shadow-lg h-full">
                     <div className="p-4 border-b">
                       <h2 className="text-xl font-bold">⏰ 時間軸</h2>
                       <p className="text-sm text-gray-600">
-                        根據提示拖拽卡片到正確的時間位置 • 點擊已放置的卡片查看詳情 • 滑鼠滾輪縮放 • 拖拽時間軸平移
+                        根據提示拖拽卡片到正確的時間位置 • 點擊已放置的卡片查看詳情 • 滑鼠滾輪或雙指縮放 • 拖拽時間軸平移
                       </p>
                     </div>
                     
                     <div 
-                      className={`relative overflow-hidden flex-1 timeline-background ${
+                      className={`relative overflow-hidden flex-1 timeline-background no-select ${
                         isTimelineDragging ? 'cursor-grabbing' : 'cursor-grab'
                       }`}
                       style={{ 
@@ -595,6 +799,9 @@
                       onDragEnter={handleDragEnter}
                       onDragLeave={handleDragLeave}
                       onMouseDown={handleTimelineMouseDown}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
                       onClick={closePopup}
                       ref={timelineRef}
                     >
@@ -607,7 +814,7 @@
                         }}
                       ></div>
                       
-                      {/* Year markers - dynamic based on zoom level */}
+                      {/* Year markers */}
                       {dynamicYearMarkers.map(year => {
                         const xPos = yearToPixel(year);
                         const containerWidth = timelineRef.current ? timelineRef.current.clientWidth : 800;
@@ -639,14 +846,13 @@
                               top: '30%',
                               transform: 'translateX(-50%)' 
                             }}
-                            onMouseDown={(e) => e.stopPropagation()} // Prevent triggering timeline drag
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
                           >
                             <Card card={card} isPlaced={true} placedYear={card.placedYear} />
                           </div>
                         );
                       })}
-
-                      {/* No general drop hint - only show error messages when placement is incorrect */}
                     </div>
 
                     {/* Control panel */}
@@ -657,7 +863,7 @@
                             縮放: {(timelineScale * 100).toFixed(0)}%
                           </span>
                           <span className="text-xs text-gray-500">
-                            💡 滑鼠滾輪縮放(以滑鼠為中心) • 拖拽時間軸平移 • 年份標記隨縮放自動調整
+                            💡 滑鼠滾輪/雙指縮放 • 拖拽時間軸平移 • 年份標記隨縮放自動調整
                           </span>
                         </div>
                         <button
@@ -680,7 +886,7 @@
                   onMouseDown={handleResizerMouseDown}
                 ></div>
 
-                {/* Card library - adjustable height */}
+                {/* Card library */}
                 <div className="bg-white shadow-lg border-t" style={{ height: `${100 - timelineHeight}vh` }}>
                   <div 
                     className="h-full"
@@ -740,6 +946,9 @@
                   </div>
                 </div>
               </div>
+
+              {/* Touch drag preview */}
+              <TouchDragPreview />
 
               {/* Popup detail */}
               <PopupDetail />
